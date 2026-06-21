@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Periodic Table of Elements</title>
+    <style>
+        /* --- Reset & Base Configurations --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background-color: #0f0f11;
+            color: #f1f1f4;
+            line-height: 1.4;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            color: #00adb5;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        /* --- Element Structure Card (Top Dashboard Feature) --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        .info-card {
+            background-color: #16161a;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #232329;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .large-element-anatomy {
+            width: 130px;
+            height: 130px;
+            background-color: #2a9d8f;
+            color: #ffffff;
+            border-radius: 10px;
+            position: relative;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            flex-shrink: 0;
+        }
+
+        .anatomy-num { font-size: 1.1rem; font-weight: 700; }
+        .anatomy-sym { font-size: 3rem; font-weight: 800; text-align: center; line-height: 1; }
+        .anatomy-name { font-size: 0.9rem; text-align: center; font-weight: 600; }
+        .anatomy-mass { font-size: 0.8rem; text-align: center; opacity: 0.85; }
+
+        .card-desc h2 { color: #00adb5; font-size: 1.35rem; margin-bottom: 8px; }
+        .card-desc p { color: #cbd5e1; font-size: 0.95rem; }
+        .card-desc ul { margin-top: 6px; padding-left: 18px; color: #94a3b8; font-size: 0.9rem; }
+
+        /* --- Categorized Color Legend --- */
+        .legend-title { color: #00adb5; font-size: 1.1rem; margin-bottom: 12px; font-weight: 600; }
+        .legend-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 30px;
+            background: #16161a;
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid #232329;
+        }
+
+        .legend-node {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.88rem;
+            font-weight: 500;
+        }
+
+        .legend-swatch { width: 22px; height: 22px; border-radius: 4px; }
+
+  
+        .table-viewport {
+            overflow-x: auto;
+            background: #16161a;
+            padding: 24px;
+            border-radius: 14px;
+            border: 1px solid #232329;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+        }
+
+        table {
+            border-collapse: separate;
+            border-spacing: 6px;
+            margin: 0 auto;
+            table-layout: fixed;
+        }
+
+      
+        td {
+            width: 72px;
+            height: 72px;
+            text-align: center;
+            vertical-align: bottom;
+            padding: 6px 4px;
+            font-weight: bold;
+            border-radius: 6px;
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease;
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+        }
+
+        td:hover:not(.empty) {
+            transform: scale(1.4);
+            box-shadow: 0px 12px 24px rgba(0,0,0,0.6), 0px 0px 16px rgba(255, 255, 255, 0.4);
+            z-index: 50;
+        }
+
+
+        .cell-num {
+            position: absolute;
+            top: 4px;
+            left: 5px;
+            font-size: 0.65rem;
+            font-weight: 400;
+            opacity: 0.85;
+            line-height: 1;
+        }
+
+        .cell-sym {
+            display: block;
+            font-size: 1.4rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+
+        .cell-name {
+            display: block;
+            font-size: 0.55rem;
+            font-weight: 500;
+            letter-spacing: -0.1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            opacity: 0.95;
+        }
+
+        .cell-mass {
+            display: block;
+            font-size: 0.52rem;
+            font-weight: 400;
+            opacity: 0.75;
+        }
+
+        .reactive-nonmetal { background-color: #2a9d8f; color: #fff; }
+        .noble-gas { background-color: #6d597a; color: #fff; }
+        .alkali-metal { background-color: #e63946; color: #fff; }
+        .alkaline-earth { background-color: #f4a261; color: #121214; }
+        .metalloid { background-color: #e9c46a; color: #121214; }
+        .post-transition-metal { background-color: #457b9d; color: #fff; }
+        .transition-metal { background-color: #1d3557; color: #fff; }
+        .lanthanide { background-color: #a8dadc; color: #121214; }
+        .actinide { background-color: #e2eafc; color: #121214; }
+        .unknown { background-color: #4a4e69; color: #fff; }
+
+        .empty {
+            background-color: transparent !important;
+            pointer-events: none;
+        }
+
+        .spacer-row { height: 20px; }
+        .inner-range-text { font-size: 0.75rem; font-weight: 600; display: block; text-align: center; margin-bottom: 18px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Periodic Table of Elements</h1>
+            <p>Comprehensive interactive web catalog with complete atomic designations, system names, and exact mass distributions.</p>
+        </header>
+
+        <div class="dashboard-grid">
+            <div class="info-card">
+                <div class="large-element-anatomy">
+                    <div class="anatomy-num">1</div>
+                    <div class="anatomy-sym">H</div>
+                    <div class="anatomy-name">Hydrogen</div>
+                    <div class="anatomy-mass">1.008</div>
+                </div>
+                <div class="card-desc">
+                    <h2>Anatomy of an Element Cell</h2>
+                    <p>Each standard layout display tile holds four critical parameters cleanly aligned inside the tracking grid system:</p>
+                    <ul>
+                        <li><strong>Top-Left Value:</strong> Atomic Number (Total protons in the nucleus).</li>
+                        <li><strong>Center Large Text:</strong> Standard Molecular IUPAC Symbol.</li>
+                        <li><strong>Middle Text String:</strong> Full Global English Name of the Element.</li>
+                        <li><strong>Bottom Micro Value:</strong> Standard Atomic Weight/Mass ($u$).</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="legend-title">Chemical Series & Categorization Keys</div>
+        <div class="legend-box">
+            <div class="legend-node"><div class="legend-swatch alkali-metal"></div>Alkali Metals</div>
+            <div class="legend-node"><div class="legend-swatch alkaline-earth"></div>Alkaline Earth</div>
+            <div class="legend-node"><div class="legend-swatch transition-metal"></div>Transition Metals</div>
+            <div class="legend-node"><div class="legend-swatch lanthanide"></div>Lanthanides</div>
+            <div class="legend-node"><div class="legend-swatch actinide"></div>Actinides</div>
+            <div class="legend-node"><div class="legend-swatch post-transition-metal"></div>Post-Transition</div>
+            <div class="legend-node"><div class="legend-swatch metalloid"></div>Metalloids</div>
+            <div class="legend-node"><div class="legend-swatch reactive-nonmetal"></div>Reactive Nonmetals</div>
+            <div class="legend-node"><div class="legend-swatch noble-gas"></div>Noble Gases</div>
+            <div class="legend-node"><div class="legend-swatch unknown"></div>Unknown</div>
+        </div>
+
+        <div class="table-viewport">
+            <table>
+                <tr>
+                    <td class="reactive-nonmetal"><span class="cell-num">1</span><span class="cell-sym">H</span><span class="cell-name">Hydrogen</span><span class="cell-mass">1.008</span></td>
+                    <td colspan="16" class="empty"></td>
+                    <td class="noble-gas"><span class="cell-num">2</span><span class="cell-sym">He</span><span class="cell-name">Helium</span><span class="cell-mass">4.0026</span></td>
+                </tr>
+                <tr>
+                    <td class="alkali-metal"><span class="cell-num">3</span><span class="cell-sym">Li</span><span class="cell-name">Lithium</span><span class="cell-mass">6.94</span></td>
+                    <td class="alkaline-earth"><span class="cell-num">4</span><span class="cell-sym">Be</span><span class="cell-name">Beryllium</span><span class="cell-mass">9.0122</span></td>
+                    <td colspan="10" class="empty"></td>
+                    <td class="metalloid"><span class="cell-num">5</span><span class="cell-sym">B</span><span class="cell-name">Boron</span><span class="cell-mass">10.81</span></td>
+                    <td class="reactive-nonmetal"><span class="cell-num">6</span><span class="cell-sym">C</span><span class="cell-name">Carbon</span><span class="cell-mass">12.011</span></td>
+                    <td class="reactive-nonmetal"><span class="cell-num">7</span><span class="cell-sym">N</span><span class="cell-name">Nitrogen</span><span class="cell-mass">14.007</span></td>
+                    <td class="reactive-nonmetal"><span class="cell-num">8</span><span class="cell-sym">O</span><span class="cell-name">Oxygen</span><span class="cell-mass">15.999</span></td>
+                    <td class="reactive-nonmetal"><span class="cell-num">9</span><span class="cell-sym">F</span><span class="cell-name">Fluorine</span><span class="cell-mass">18.998</span></td>
+                    <td class="noble-gas"><span class="cell-num">10</span><span class="cell-sym">Ne</span><span class="cell-name">Neon</span><span class="cell-mass">20.180</span></td>
+                </tr>
+                <tr>
+                    <td class="alkali-metal"><span class="cell-num">11</span><span class="cell-sym">Na</span><span class="cell-name">Sodium</span><span class="cell-mass">22.990</span></td>
+                    <td class="alkaline-earth"><span class="cell-num">12</span><span class="cell-sym">Mg</span><span class="cell-name">Magnesium</span><span class="cell-mass">24.305</span></td>
+                    <td colspan="10" class="empty"></td>
+                    <td class="post-transition-metal"><span class="cell-num">13</span><span class="cell-sym">Al</span><span class="cell-name">Aluminium</span><span class="cell-mass">26.982</span></td>
+                    <td class="metalloid"><span class="cell-num">14</span><span class="cell-sym">Si</span><span class="cell-name">Silicon</span><span class="cell-mass">28.085</span></td>
+                    <td class="reactive-nonmetal"><span class="cell-num">15</span><span class="cell-sym">P</span><span class="cell-name">Phosphorus</span><span class="cell-mass">30.974</span></td>
+                    <td class="reactive-nonmetal"><span class="cell-num">16</span><span class="cell-sym">S</span><span class="cell-name">Sulfur</span><span class="cell-mass">32.06</span></td>
+                    <td class="reactive-nonmetal"><span class="cell-num">17</span><span class="cell-sym">Cl</span><span class="cell-name">Chlorine</span><span class="cell-mass">35.45</span></td>
+                    <td class="noble-gas"><span class="cell-num">18</span><span class="cell-sym">Ar</span><span class="cell-name">Argon</span><span class="cell-mass">39.95</span></td>
+                </tr>
+                <tr>
+                    <td class="alkali-metal"><span class="cell-num">19</span><span class="cell-sym">K</span><span class="cell-name">Potassium</span><span class="cell-mass">39.098</span></td>
+                    <td class="alkaline-earth"><span class="cell-num">20</span><span class="cell-sym">Ca</span><span class="cell-name">Calcium</span><span class="cell-mass">40.078</span></td>
+                    <td class="transition-metal"><span class="cell-num">21</span><span class="cell-sym">Sc</span><span class="cell-name">Scandium</span><span class="cell-mass">44.956</span></td>
+                    <td class="transition-metal"><span class="cell-num">22</span><span class="cell-sym">Ti</span><span class="cell-name">Titanium</span><span class="cell-mass">47.867</span></td>
+                    <td class="transition-metal"><span class="cell-num">23</span><span class="cell-sym">V</span><span class="cell-name">Vanadium</span><span class="cell-mass">50.942</span></td>
+                    <td class="transition-metal"><span class="cell-num">24</span><span class="cell-sym">Cr</span><span class="cell-name">Chromium</span><span class="cell-mass">51.996</span></td>
+                    <td class="transition-metal"><span class="cell-num">25</span><span class="cell-sym">Mn</span><span class="cell-name">Manganese</span><span class="cell-mass">54.938</span></td>
+                    <td class="transition-metal"><span class="cell-num">26</span><span class="cell-sym">Fe</span><span class="cell-name">Iron</span><span class="cell-mass">55.845</span></td>
+                    <td class="transition-metal"><span class="cell-num">27</span><span class="cell-sym">Co</span><span class="cell-name">Cobalt</span><span class="cell-mass">58.933</span></td>
+                    <td class="transition-metal"><span class="cell-num">28</span><span class="cell-sym">Ni</span><span class="cell-name">Nickel</span><span class="cell-mass">58.693</span></td>
+                    <td class="transition-metal"><span class="cell-num">29</span><span class="cell-sym">Cu</span><span class="cell-name">Copper</span><span class="cell-mass">63.546</span></td>
+                    <td class="transition-metal"><span class="cell-num">30</span><span class="cell-sym">Zn</span><span class="cell-name">Zinc</span><span class="cell-mass">65.38</span></td>
+                    <td class="post-transition-metal"><span class="cell-num">31</span><span class="cell-sym">Ga</span><span class="cell-name">Gallium</span><span class="cell-mass">69.723</span></td>
+                    <td class="metalloid"><span class="cell-num">32</span><span class="cell-sym">Ge</span><span class="cell-name">Germanium</span><span class="cell-mass">72.630</span></td>
+                    <td class="metalloid"><span class="cell-num">33</span><span class="cell-sym">As</span><span class="cell-name">Arsenic</span><span class="cell-mass">74.922</span></td>
+                    <td class="reactive-nonmetal"><span class="cell-num">34</span><span class="cell-sym">Se</span><span class="cell-name">Selenium</span><span class="cell-mass">78.971</span></td>
+                    <td class="reactive-nonmetal"><span class="cell-num">35</span><span class="cell-sym">Br</span><span class="cell-name">Bromine</span><span class="cell-mass">79.904</span></td>
+                    <td class="noble-gas"><span class="cell-num">36</span><span class="cell-sym">Kr</span><span class="cell-name">Krypton</span><span class="cell-mass">83.798</span></td>
+                </tr>
+                <tr>
+                    <td class="alkali-metal"><span class="cell-num">37</span><span class="cell-sym">Rb</span><span class="cell-name">Rubidium</span><span class="cell-mass">85.468</span></td>
+                    <td class="alkaline-earth"><span class="cell-num">38</span><span class="cell-sym">Sr</span><span class="cell-name">Strontium</span><span class="cell-mass">87.62</span></td>
+                    <td class="transition-metal"><span class="cell-num">39</span><span class="cell-sym">Y</span><span class="cell-name">Yttrium</span><span class="cell-mass">88.906</span></td>
+                    <td class="transition-metal"><span class="cell-num">40</span><span class="cell-sym">Zr</span><span class="cell-name">Zirconium</span><span class="cell-mass">91.224</span></td>
+                    <td class="transition-metal"><span class="cell-num">41</span><span class="cell-sym">Nb</span><span class="cell-name">Niobium</span><span class="cell-mass">92.906</span></td>
+                    <td class="transition-metal"><span class="cell-num">42</span><span class="cell-sym">Mo</span><span class="cell-name">Molybdenum</span><span class="cell-mass">95.95</span></td>
+                    <td class="transition-metal"><span class="cell-num">43</span><span class="cell-sym">Tc</span><span class="cell-name">Technetium</span><span class="cell-mass">[98]</span></td>
+                    <td class="transition-metal"><span class="cell-num">44</span><span class="cell-sym">Ru</span><span class="cell-name">Ruthenium</span><span class="cell-mass">101.07</span></td>
+                    <td class="transition-metal"><span class="cell-num">45</span><span class="cell-sym">Rh</span><span class="cell-name">Rhodium</span><span class="cell-mass">102.91</span></td>
+                    <td class="transition-metal"><span class="cell-num">46</span><span class="cell-sym">Pd</span><span class="cell-name">Palladium</span><span class="cell-mass">106.42</span></td>
+                    <td class="transition-metal"><span class="cell-num">47</span><span class="cell-sym">Ag</span><span class="cell-name">Silver</span><span class="cell-mass">107.87</span></td>
+                    <td class="transition-metal"><span class="cell-num">48</span><span class="cell-sym">Cd</span><span class="cell-name">Cadmium</span><span class="cell-mass">112.41</span></td>
+                    <td class="post-transition-metal"><span class="cell-num">49</span><span class="cell-sym">In</span><span class="cell-name">Indium</span><span class="cell-mass">114.82</span></td>
+                    <td class="post-transition-metal"><span class="cell-num">50</span><span class="cell-sym">Sn</span><span class="cell-name">Tin</span><span class="cell-mass">118.71</span></td>
+                    <td class="metalloid"><span class="cell-num">51</span><span class="cell-sym">Sb</span><span class="cell-name">Antimony</span><span class="cell-mass">121.76</span></td>
+                    <td class="metalloid"><span class="cell-num">52</span><span class="cell-sym">Te</span><span class="cell-name">Tellurium</span><span class="cell-mass">127.6</span></td>
+                    <td class="reactive-nonmetal"><span class="cell-num">53</span><span class="cell-sym">I</span><span class="cell-name">Iodine</span><span class="cell-mass">126.90</span></td>
+                    <td class="noble-gas"><span class="cell-num">54</span><span class="cell-sym">Xe</span><span class="cell-name">Xenon</span><span class="cell-mass">131.29</span></td>
+                </tr>
+                <tr>
+                    <td class="alkali-metal"><span class="cell-num">55</span><span class="cell-sym">Cs</span><span class="cell-name">Cesium</span><span class="cell-mass">132.91</span></td>
+                    <td class="alkaline-earth"><span class="cell-num">56</span><span class="cell-sym">Ba</span><span class="cell-name">Barium</span><span class="cell-mass">137.33</span></td>
+                    <td class="lanthanide"><span class="inner-range-text">57-71</span></td>
+                    <td class="transition-metal"><span class="cell-num">72</span><span class="cell-sym">Hf</span><span class="cell-name">Hafnium</span><span class="cell-mass">178.49</span></td>
+                    <td class="transition-metal"><span class="cell-num">73</span><span class="cell-sym">Ta</span><span class="cell-name">Tantalum</span><span class="cell-mass">180.95</span></td>
+                    <td class="transition-metal"><span class="cell-num">74</span><span class="cell-sym">W</span><span class="cell-name">Tungsten</span><span class="cell-mass">183.84</span></td>
+                    <td class="transition-metal"><span class="cell-num">75</span><span class="cell-sym">Re</span><span class="cell-name">Rhenium</span><span class="cell-mass">186.21</span></td>
+                    <td class="transition-metal"><span class="cell-num">76</span><span class="cell-sym">Os</span><span class="cell-name">Osmium</span><span class="cell-mass">190.23</span></td>
+                    <td class="transition-metal"><span class="cell-num">77</span><span class="cell-sym">Ir</span><span class="cell-name">Iridium</span><span class="cell-mass">192.22</span></td>
+                    <td class="transition-metal"><span class="cell-num">78</span><span class="cell-sym">Pt</span><span class="cell-name">Platinum</span><span class="cell-mass">195.08</span></td>
+                    <td class="transition-metal"><span class="cell-num">79</span><span class="cell-sym">Au</span><span class="cell-name">Gold</span><span class="cell-mass">196.97</span></td>
+                    <td class="transition-metal"><span class="cell-num">80</span><span class="cell-sym">Hg</span><span class="cell-name">Mercury</span><span class="cell-mass">200.59</span></td>
+                    <td class="post-transition-metal"><span class="cell-num">81</span><span class="cell-sym">Tl</span><span class="cell-name">Thallium</span><span class="cell-mass">204.38</span></td>
+                    <td class="post-transition-metal"><span class="cell-num">82</span><span class="cell-sym">Pb</span><span class="cell-name">Lead</span><span class="cell-mass">207.2</span></td>
+                    <td class="post-transition-metal"><span class="cell-num">83</span><span class="cell-sym">Bi</span><span class="cell-name">Bismuth</span><span class="cell-mass">208.98</span></td>
+                    <td class="post-transition-metal"><span class="cell-num">84</span><span class="cell-sym">Po</span><span class="cell-name">Polonium</span><span class="cell-mass">[209]</span></td>
+                    <td class="metalloid"><span class="cell-num">85</span><span class="cell-sym">At</span><span class="cell-name">Astatine</span><span class="cell-mass">[210]</span></td>
+                    <td class="noble-gas"><span class="cell-num">86</span><span class="cell-sym">Rn</span><span class="cell-name">Radon</span><span class="cell-mass">[222]</span></td>
+                </tr>
+                <tr>
+                    <td class="alkali-metal"><span class="cell-num">87</span><span class="cell-sym">Fr</span><span class="cell-name">Francium</span><span class="cell-mass">[223]</span></td>
+                    <td class="alkaline-earth"><span class="cell-num">88</span><span class="cell-sym">Ra</span><span class="cell-name">Radium</span><span class="cell-mass">[226]</span></td>
+                    <td class="actinide"><span class="inner-range-text">89-103</span></td>
+                    <td class="transition-metal"><span class="cell-num">104</span><span class="cell-sym">Rf</span><span class="cell-name">Rutherf.</span><span class="cell-mass">[267]</span></td>
+                    <td class="transition-metal"><span class="cell-num">105</span><span class="cell-sym">Db</span><span class="cell-name">Dubnium</span><span class="cell-mass">[268]</span></td>
+                    <td class="transition-metal"><span class="cell-num">106</span><span class="cell-sym">Sg</span><span class="cell-name">Seaborgium</span><span class="cell-mass">[269]</span></td>
+                    <td class="transition-metal"><span class="cell-num">107</span><span class="cell-sym">Bh</span><span class="cell-name">Bohrium</span><span class="cell-mass">[270]</span></td>
+                    <td class="transition-metal"><span class="cell-num">108</span><span class="cell-sym">Hs</span><span class="cell-name">Hassium</span><span class="cell-mass">[269]</span></td>
+                    <td class="transition-metal"><span class="cell-num">109</span><span class="cell-sym">Mt</span><span class="cell-name">Meitnerium</span><span class="cell-mass">[278]</span></td>
+                    <td class="transition-metal"><span class="cell-num">110</span><span class="cell-sym">Ds</span><span class="cell-name">Darmstadt.</span><span class="cell-mass">[281]</span></td>
+                    <td class="transition-metal"><span class="cell-num">111</span><span class="cell-sym">Rg</span><span class="cell-name">Roentgen.</span><span class="cell-mass">[282]</span></td>
+                    <td class="transition-metal"><span class="cell-num">112</span><span class="cell-sym">Cn</span><span class="cell-name">Copernic.</span><span class="cell-mass">[285]</span></td>
+                    <td class="post-transition-metal"><span class="cell-num">113</span><span class="cell-sym">Nh</span><span class="cell-name">Nihonium</span><span class="cell-mass">[286]</span></td>
+                    <td class="post-transition-metal"><span class="cell-num">114</span><span class="cell-sym">Fl</span><span class="cell-name">Flerovium</span><span class="cell-mass">[289]</span></td>
+                    <td class="post-transition-metal"><span class="cell-num">115</span><span class="cell-sym">Mc</span><span class="cell-name">Moscovium</span><span class="cell-mass">[290]</span></td>
+                    <td class="post-transition-metal"><span class="cell-num">116</span><span class="cell-sym">Lv</span><span class="cell-name">Livermorium</span><span class="cell-mass">[293]</span></td>
+                    <td class="unknown"><span class="cell-num">117</span><span class="cell-sym">Ts</span><span class="cell-name">Tennessine</span><span class="cell-mass">[294]</span></td>
+                    <td class="noble-gas"><span class="cell-num">118</span><span class="cell-sym">Og</span><span class="cell-name">Oganesson</span><span class="cell-mass">[294]</span></td>
+                </tr>
+
+                <tr class="spacer-row"><td colspan="18" class="empty"></td></tr>
+
+                <tr>
+                    <td colspan="2" class="empty"></td>
+                    <td class="lanthanide"><span class="cell-num">57</span><span class="cell-sym">La</span><span class="cell-name">Lanthanum</span><span class="cell-mass">138.91</span></td>
+                    <td class="lanthanide"><span class="cell-num">58</span><span class="cell-sym">Ce</span><span class="cell-name">Cerium</span><span class="cell-mass">140.12</span></td>
+                    <td class="lanthanide"><span class="cell-num">59</span><span class="cell-sym">Pr</span><span class="cell-name">Praseodym.</span><span class="cell-mass">140.91</span></td>
+                    <td class="lanthanide"><span class="cell-num">60</span><span class="cell-sym">Nd</span><span class="cell-name">Neodymium</span><span class="cell-mass">144.24</span></td>
+                    <td class="lanthanide"><span class="cell-num">61</span><span class="cell-sym">Pm</span><span class="cell-name">Promethium</span><span class="cell-mass">[145]</span></td>
+                    <td class="lanthanide"><span class="cell-num">62</span><span class="cell-sym">Sm</span><span class="cell-name">Samarium</span><span class="cell-mass">150.36</span></td>
+                    <td class="lanthanide"><span class="cell-num">63</span><span class="cell-sym">Eu</span><span class="cell-name">Europium</span><span class="cell-mass">151.96</span></td>
+                    <td class="lanthanide"><span class="cell-num">64</span><span class="cell-sym">Gd</span><span class="cell-name">Gadolinium</span><span class="cell-mass">157.25</span></td>
+                    <td class="lanthanide"><span class="cell-num">65</span><span class="cell-sym">Tb</span><span class="cell-name">Terbium</span><span class="cell-mass">158.93</span></td>
+                    <td class="lanthanide"><span class="cell-num">66</span><span class="cell-sym">Dy</span><span class="cell-name">Dysprosium</span><span class="cell-mass">162.50</span></td>
+                    <td class="lanthanide"><span class="cell-num">67</span><span class="cell-sym">Ho</span><span class="cell-name">Holmium</span><span class="cell-mass">164.93</span></td>
+                    <td class="lanthanide"><span class="cell-num">68</span><span class="cell-sym">Er</span><span class="cell-name">Erbium</span><span class="cell-mass">167.26</span></td>
+                    <td class="lanthanide"><span class="cell-num">69</span><span class="cell-sym">Tm</span><span class="cell-name">Thulium</span><span class="cell-mass">168.93</span></td>
+                    <td class="lanthanide"><span class="cell-num">70</span><span class="cell-sym">Yb</span><span class="cell-name">Ytterbium</span><span class="cell-mass">173.05</span></td>
+                    <td class="lanthanide"><span class="cell-num">71</span><span class="cell-sym">Lu</span><span class="cell-name">Lutetium</span><span class="cell-mass">174.97</span></td>
+                    <td class="empty"></td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="empty"></td>
+                    <td class="actinide"><span class="cell-num">89</span><span class="cell-sym">Ac</span><span class="cell-name">Actinium</span><span class="cell-mass">[227]</span></td>
+                    <td class="actinide"><span class="cell-num">90</span><span class="cell-sym">Th</span><span class="cell-name">Thorium</span><span class="cell-mass">232.04</span></td>
+                    <td class="actinide"><span class="cell-num">91</span><span class="cell-sym">Pa</span><span class="cell-name">Protactin.</span><span class="cell-mass">231.04</span></td>
+                    <td class="actinide"><span class="cell-num">92</span><span class="cell-sym">U</span><span class="cell-name">Uranium</span><span class="cell-mass">238.03</span></td>
+                    <td class="actinide"><span class="cell-num">93</span><span class="cell-sym">Np</span><span class="cell-name">Neptunium</span><span class="cell-mass">[237]</span></td>
+                    <td class="actinide"><span class="cell-num">94</span><span class="cell-sym">Pu</span><span class="cell-name">Plutonium</span><span class="cell-mass">[244]</span></td>
+                    <td class="actinide"><span class="cell-num">95</span><span class="cell-sym">Am</span><span class="cell-name">Americium</span><span class="cell-mass">[243]</span></td>
+                    <td class="actinide"><span class="cell-num">96</span><span class="cell-sym">Cm</span><span class="cell-name">Curium</span><span class="cell-mass">[247]</span></td>
+                    <td class="actinide"><span class="cell-num">97</span><span class="cell-sym">Bk</span><span class="cell-name">Berkelium</span><span class="cell-mass">[247]</span></td>
+                    <td class="actinide"><span class="cell-num">98</span><span class="cell-sym">Cf</span><span class="cell-name">Californ.</span><span class="cell-mass">[251]</span></td>
+                    <td class="actinide"><span class="cell-num">99</span><span class="cell-sym">Es</span><span class="cell-name">Einstein.</span><span class="cell-mass">[252]</span></td>
+                    <td class="actinide"><span class="cell-num">100</span><span class="cell-sym">Fm</span><span class="cell-name">Fermium</span><span class="cell-mass">[257]</span></td>
+                    <td class="actinide"><span class="cell-num">101</span><span class="cell-sym">Md</span><span class="cell-name">Mendelev.</span><span class="cell-mass">[258]</span></td>
+                    <td class="actinide"><span class="cell-num">102</span><span class="cell-sym">No</span><span class="cell-name">Nobelium</span><span class="cell-mass">[259]</span></td>
+                    <td class="actinide"><span class="cell-num">103</span><span class="cell-sym">Lr</span><span class="cell-name">Lawrencium</span><span class="cell-mass">[266]</span></td>
+                    <td class="empty"></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>
