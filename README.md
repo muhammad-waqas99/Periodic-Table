@@ -1,5 +1,9 @@
 # Interactive Periodic Table of Elements
 
+
+[![Live Demo](https://img.shields.io/badge/Live-Demo-success?style=for-the-badge&logo=vercel)](https://interactivperiodictable.netlify.app/)
+
+
 A responsive and visually organized Periodic Table of Elements built using HTML and CSS. The project displays all 118 known chemical elements with their atomic numbers, symbols, names, and atomic masses. Elements are color-coded by chemical category, including alkali metals, noble gases, transition metals, lanthanides, actinides, metalloids, and reactive nonmetals.
 
 ## Features
