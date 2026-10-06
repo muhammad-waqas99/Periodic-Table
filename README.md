@@ -6,6 +6,10 @@
 
 A responsive and visually organized Periodic Table of Elements built using HTML and CSS. The project displays all 118 known chemical elements with their atomic numbers, symbols, names, and atomic masses. Elements are color-coded by chemical category, including alkali metals, noble gases, transition metals, lanthanides, actinides, metalloids, and reactive nonmetals.
 
+
+<img width="1914" height="994" alt="image" src="https://github.com/user-attachments/assets/c823103a-a9f7-4960-b1b4-fd0c91e6ec84" />
+
+
 ## Features
 
 * Complete periodic table layout
